@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+*.env.local
+
+# ML / Models
+ml/models/checkpoints/
+ml/models/llm/
+ml/data/raw/
+ml/data/processed/
+ml/data/ela/
+*.onnx
+*.pt
+*.pth
+*.gguf
+*.bin
+mlruns/
+
+# Uploads — runtime files, never commit
+uploads/
+backend/uploads/
+backend/reports/
+
+# Training data — preprocessed cache, not source
+training_data/processed/
+training_data/ela/
+training_data/labels.csv
+
+# Large data files
+ml/data/synthetic/genuine/
+ml/data/synthetic/fake/
+ml/data/synthetic/labels.csv
+
+# Zip files
+*.zip
+
+# knowledge base draft
+knowledge_base.md
+KNOWLEDGE.md
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Alembic
+backend/migrations/versions/__pycache__/

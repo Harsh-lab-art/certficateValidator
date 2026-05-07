@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>CertValidator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:340px;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:13px;background:#0f172a;color:#e2e8f0;overflow:hidden}
+
+.header{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
+.logo{width:28px;height:28px;border-radius:8px;background:#4f46e5;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:15px;height:15px}
+.header-text h1{font-size:13px;font-weight:600;color:#f1f5f9;letter-spacing:0.01em}
+.header-text p{font-size:11px;color:#475569;margin-top:1px}
+
+.body{padding:13px 15px}
+
+.api-row{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:9px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:11px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background 0.3s}
+.dot.on{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.5)}
+.dot.off{background:#f87171}
+.dot.checking{background:#fbbf24;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.api-text{font-size:11px;color:#64748b}
+
+.btn-scan{width:100%;padding:10px 16px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s,transform 0.1s;margin-bottom:9px;letter-spacing:0.01em}
+.btn-scan:hover:not(:disabled){background:#4338ca}
+.btn-scan:active:not(:disabled){transform:scale(0.98)}
+.btn-scan:disabled{opacity:0.45;cursor:not-allowed}
+.btn-scan svg{width:14px;height:14px}
+
+.hint{font-size:11px;color:#475569;text-align:center;line-height:1.5;margin-bottom:12px}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:16px 0}
+.loading.show{display:block}
+.spinner-wrap{display:flex;justify-content:center;margin-bottom:8px}
+.spinner{width:22px;height:22px;border:2px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-step{font-size:12px;color:#64748b;min-height:18px;transition:all 0.3s}
+
+/* Result */
+.result{display:none}
+.result.show{display:block}
+
+.verdict-card{border-radius:12px;border:1px solid;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.verdict-card.genuine{background:rgba(22,163,74,0.08);border-color:rgba(74,222,128,0.2)}
+.verdict-card.fake{background:rgba(220,38,38,0.08);border-color:rgba(248,113,113,0.2)}
+.verdict-card.suspicious{background:rgba(217,119,6,0.08);border-color:rgba(251,191,36,0.2)}
+.verdict-card.inconclusive{background:rgba(100,116,139,0.08);border-color:rgba(148,163,184,0.2)}
+
+.verdict-left .label{font-size:11px;color:#64748b;margin-bottom:3px}
+.verdict-left .verdict-text{font-size:14px;font-weight:600}
+.verdict-text.genuine{color:#4ade80}
+.verdict-text.fake{color:#f87171}
+.verdict-text.suspicious{color:#fbbf24}
+.verdict-text.inconclusive{color:#94a3b8}
+
+.verdict-right .label{font-size:11px;color:#64748b;text-align:right;margin-bottom:3px}
+.score{font-size:24px;font-weight:700;line-height:1;text-align:right}
+
+/* Score ring mini */
+.score-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.score-wrap svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.score-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.score-num{font-size:13px;font-weight:600;line-height:1}
+.score-sub{font-size:8px;color:#475569}
+
+/* Fields */
+.fields-title{font-size:11px;font-weight:500;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.field-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.field-row:last-child{border-bottom:none}
+.field-name{font-size:11px;color:#475569;width:78px;flex-shrink:0;text-transform:capitalize}
+.field-val{font-size:11px;color:#cbd5e1;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.field-dot.ok{background:#4ade80}
+.field-dot.bad{background:#f87171}
+
+/* Bars */
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.bar-label{font-size:10px;color:#475569;width:58px;flex-shrink:0}
+.bar-track{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1)}
+
+.view-full{display:block;width:100%;padding:8px;text-align:center;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:9px;color:#818cf8;text-decoration:none;font-size:12px;font-weight:500;margin-top:10px;transition:background 0.15s}
+.view-full:hover{background:rgba(99,102,241,0.15);color:#a5b4fc}
+
+.reason-box{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:9px 11px;margin-top:10px;font-size:11px;color:#64748b;line-height:1.6;max-height:72px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+
+/* Explanation strip */
+.explain{font-size:10px;color:#334155;text-align:center;margin-top:8px;padding:0 4px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>CertValidator</h1>
+    <p>AI Certificate Forensics</p>
+  </div>
+</div>
+
+<div class="body">
+  <div class="api-row">
+    <div class="dot checking" id="api-dot"></div>
+    <span class="api-text" id="api-text">Checking backend...</span>
+  </div>
+
+  <button class="btn-scan" id="btn-scan" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <path d="M14 14h3v3M14 17h3M17 14v3"/>
+    </svg>
+    Select region to scan
+  </button>
+  <p class="hint">Drag to select the certificate area on screen</p>
+
+  <div class="loading" id="loading">
+    <div class="spinner-wrap"><div class="spinner"></div></div>
+    <div class="loading-step" id="loading-step">Initialising...</div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="verdict-card" id="verdict-card">
+      <div class="verdict-left">
+        <div class="label">Verdict</div>
+        <div class="verdict-text" id="verdict-text">—</div>
+      </div>
+      <div class="score-wrap" id="score-ring">
+        <svg viewBox="0 0 52 52" width="52" height="52">
+          <circle cx="26" cy="26" r="20" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+          <circle cx="26" cy="26" r="20" fill="none" id="ring-fill"
+            stroke="#4ade80" stroke-width="5" stroke-linecap="round"
+            stroke-dasharray="125.6" stroke-dashoffset="125.6"/>
+        </svg>
+        <div class="score-inner">
+          <span class="score-num" id="score-num">—</span>
+          <span class="score-sub">/100</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-score bars -->
+    <div style="margin-bottom:10px">
+      <div class="bar-row">
+        <span class="bar-label">Forgery</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-forgery" style="width:0%;background:#818cf8"></div></div>
+        <span style="font-size:10px;color:#64748b;width:28px;text-align:right" id="bar-forgery-val">—</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Fields</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-fields" style="width:0%;background:#4ade80"></div></div>
+        <span style="font-size:10px;color:#64748b;width:28px;text-align:right" id="bar-fields-val">—</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">NLP</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-nlp" style="width:0%;background:#fbbf24"></div></div>
+        <span style="font-size:10px;color:#64748b;width:28px;text-align:right" id="bar-nlp-val">—</span>
+      </div>
+    </div>
+
+    <!-- Field breakdown -->
+    <div class="fields-title">Extracted fields</div>
+    <div id="fields"></div>
+
+    <!-- NLP reasoning -->
+    <div class="reason-box" id="reason-box" style="display:none"></div>
+
+    <a class="view-full" id="view-full" href="#" target="_blank">
+      View full forensic report →
+    </a>
+    <p class="explain" id="explain-text"></p>
+  </div>
+</div>
+
+<script src="src/popup.js"></script>
+</body>
+</html>
